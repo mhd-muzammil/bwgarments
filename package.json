@@ -1,0 +1,14 @@
+{
+  "name": "bw-garments",
+  "version": "1.0.0",
+  "description": "Black & White Garments — Premium Fashion E-Commerce Platform (MERN Stack)",
+  "scripts": {
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "dev": "cd server && npm run dev",
+    "seed": "cd server && npm run seed",
+    "build": "cd client && npm run build"
+  },
+  "author": "",
+  "license": "ISC"
+}

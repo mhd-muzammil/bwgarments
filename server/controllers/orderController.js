@@ -1,0 +1,216 @@
+const mongoose = require('mongoose');
+const Order = require('../models/Order');
+const Cart = require('../models/Cart');
+const Product = require('../models/Product');
+
+// @desc    Checkout — create order with Mongo transaction
+// @route   POST /api/orders/checkout
+exports.checkout = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { shippingAddress } = req.body;
+
+    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone ||
+        !shippingAddress.addressLine1 || !shippingAddress.city ||
+        !shippingAddress.state || !shippingAddress.pincode) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: 'Complete shipping address is required' });
+    }
+
+    // Get cart
+    const cart = await Cart.findOne({ user: req.user.id })
+      .populate('items.product')
+      .session(session);
+
+    if (!cart || cart.items.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: 'Cart is empty' });
+    }
+
+    let totalAmount = 0;
+    const orderItems = [];
+
+    // Validate & decrement stock atomically for each item
+    for (const item of cart.items) {
+      const product = item.product;
+
+      if (!product || !product.isActive || product.soldOut) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          success: false,
+          message: `Product "${product?.title || 'Unknown'}" is no longer available`,
+        });
+      }
+
+      // Atomic stock decrement with condition
+      const updated = await Product.findOneAndUpdate(
+        {
+          _id: product._id,
+          'sizes.size': item.size,
+          'sizes.stock': { $gte: item.quantity },
+          soldOut: false,
+          isActive: true,
+        },
+        {
+          $inc: { 'sizes.$.stock': -item.quantity },
+        },
+        { new: true, session }
+      );
+
+      if (!updated) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${product.title}" in size ${item.size}`,
+        });
+      }
+
+      const itemPrice = product.discount || product.price;
+      totalAmount += itemPrice * item.quantity;
+
+      orderItems.push({
+        product: product._id,
+        title: product.title,
+        image: product.images[0],
+        size: item.size,
+        quantity: item.quantity,
+        price: itemPrice,
+      });
+    }
+
+    // Create order
+    const order = await Order.create(
+      [
+        {
+          user: req.user.id,
+          items: orderItems,
+          totalAmount,
+          shippingAddress,
+          paymentStatus: 'pending',
+          orderStatus: 'processing',
+        },
+      ],
+      { session }
+    );
+
+    // Clear cart
+    cart.items = [];
+    await cart.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({ success: true, data: order[0] });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
+  }
+};
+
+// @desc    Get user's orders
+// @route   GET /api/orders
+exports.getMyOrders = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      Order.find({ user: req.user.id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Order.countDocuments({ user: req.user.id }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: orders,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get single order
+// @route   GET /api/orders/:id
+exports.getOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'name email');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Users can only see their own orders
+    if (req.user.role !== 'admin' && order.user._id.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update order status (Admin)
+// @route   PUT /api/orders/:id/status
+exports.updateOrderStatus = async (req, res, next) => {
+  try {
+    const { orderStatus, paymentStatus } = req.body;
+
+    const updateFields = {};
+    if (orderStatus) updateFields.orderStatus = orderStatus;
+    if (paymentStatus) updateFields.paymentStatus = paymentStatus;
+
+    const order = await Order.findByIdAndUpdate(req.params.id, updateFields, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all orders (Admin)
+// @route   GET /api/orders/admin/all
+exports.getAllOrders = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (req.query.orderStatus) filter.orderStatus = req.query.orderStatus;
+    if (req.query.paymentStatus) filter.paymentStatus = req.query.paymentStatus;
+
+    const [orders, total] = await Promise.all([
+      Order.find(filter)
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Order.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: orders,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
