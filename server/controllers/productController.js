@@ -12,8 +12,12 @@ exports.getProducts = async (req, res, next) => {
     // Build filter
     const filter = { isActive: true };
 
-    if (req.query.category) {
-      filter.category = req.query.category;
+    if (req.query.mainCategory) {
+      filter.mainCategory = req.query.mainCategory;
+    }
+
+    if (req.query.subCategory) {
+      filter.subCategory = req.query.subCategory;
     }
 
     if (req.query.search) {
@@ -72,7 +76,7 @@ exports.getProduct = async (req, res, next) => {
 // @route   POST /api/products
 exports.createProduct = async (req, res, next) => {
   try {
-    const { title, description, price, discount, sizes, sku, category } = req.body;
+    const { title, description, price, discount, sizes, sku, mainCategory, subCategory } = req.body;
 
     // Parse sizes if sent as string
     const parsedSizes = typeof sizes === 'string' ? JSON.parse(sizes) : sizes;
@@ -105,7 +109,8 @@ exports.createProduct = async (req, res, next) => {
       discount: Number(discount) || 0,
       sizes: parsedSizes,
       sku,
-      category,
+      mainCategory,
+      subCategory,
     });
 
     res.status(201).json({ success: true, data: product });
@@ -194,17 +199,6 @@ exports.toggleSoldOut = async (req, res, next) => {
     await product.save();
 
     res.status(200).json({ success: true, data: product });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Get all categories
-// @route   GET /api/products/categories
-exports.getCategories = async (req, res, next) => {
-  try {
-    const categories = await Product.distinct('category', { isActive: true });
-    res.status(200).json({ success: true, data: categories });
   } catch (error) {
     next(error);
   }

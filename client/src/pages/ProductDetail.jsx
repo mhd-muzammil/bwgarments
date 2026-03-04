@@ -94,7 +94,7 @@ const ProductDetail = () => {
         <HiChevronRight className="w-3 h-3" />
         <Link to="/products" className="hover:text-primary transition-colors">Shop</Link>
         <HiChevronRight className="w-3 h-3" />
-        <Link to={`/products?category=${product.category}`} className="hover:text-primary transition-colors">{product.category}</Link>
+        <Link to={`/products?mainCategory=${product.mainCategory}&subCategory=${product.subCategory}`} className="hover:text-primary transition-colors">{product.subCategory || product.mainCategory}</Link>
         <HiChevronRight className="w-3 h-3" />
         <span className="text-primary font-medium truncate max-w-[150px]">{product.title}</span>
       </nav>
@@ -110,7 +110,7 @@ const ProductDetail = () => {
         {/* Right: Product Info */}
         <div className="space-y-6">
           {/* Category */}
-          <p className="text-[10px] uppercase tracking-[0.3em] text-accent font-semibold">{product.category}</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-accent font-semibold">{product.mainCategory} / {product.subCategory}</p>
 
           {/* Title */}
           <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-primary leading-tight">
@@ -180,7 +180,7 @@ const ProductDetail = () => {
           <div className="border-t border-grey-200 pt-6 space-y-3">
             <div className="flex items-center gap-6 text-xs text-grey-500">
               <span><span className="font-semibold text-grey-700">SKU:</span> {product.sku}</span>
-              <span><span className="font-semibold text-grey-700">Category:</span> {product.category}</span>
+              <span><span className="font-semibold text-grey-700">Category:</span> {product.mainCategory}, {product.subCategory}</span>
             </div>
 
             <div className="flex items-center gap-4 pt-2">

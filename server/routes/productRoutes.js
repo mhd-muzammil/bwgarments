@@ -7,7 +7,6 @@ const {
   updateProduct,
   deleteProduct,
   toggleSoldOut,
-  getCategories,
   getAdminProducts,
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
@@ -15,8 +14,6 @@ const { authorize } = require('../middleware/role');
 const upload = require('../middleware/upload');
 
 // Public routes — static paths FIRST
-router.get('/categories', getCategories);
-
 // Admin routes — must be before /:id
 router.get('/admin/all', protect, authorize('admin'), getAdminProducts);
 router.post('/', protect, authorize('admin'), upload.array('images', 5), createProduct);

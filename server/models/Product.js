@@ -70,9 +70,14 @@ const productSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
-    category: {
+    mainCategory: {
       type: String,
-      required: [true, 'Category is required'],
+      required: [true, 'Main category is required'],
+      trim: true,
+    },
+    subCategory: {
+      type: String,
+      required: [true, 'Subcategory is required'],
       trim: true,
     },
     isActive: {
@@ -116,11 +121,9 @@ productSchema.pre('save', function () {
 });
 
 // Indexes for performance
-productSchema.index({ category: 1 });
+productSchema.index({ mainCategory: 1, subCategory: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ title: 'text' });
 productSchema.index({ isActive: 1 });
-productSchema.index({ sku: 1 }, { unique: true });
-
 module.exports = mongoose.model('Product', productSchema);

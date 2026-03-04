@@ -17,7 +17,8 @@ const ProductForm = () => {
     price: '',
     discount: '',
     sku: '',
-    category: '',
+    mainCategory: '',
+    subCategory: '',
     sizes: SIZES.map((s) => ({ size: s, stock: 0 })),
     images: ['', '', '', '', ''],
   });
@@ -34,7 +35,8 @@ const ProductForm = () => {
             price: p.price.toString(),
             discount: p.discount?.toString() || '0',
             sku: p.sku,
-            category: p.category,
+            mainCategory: p.mainCategory || '',
+            subCategory: p.subCategory || '',
             sizes: SIZES.map((s) => {
               const found = p.sizes.find((sz) => sz.size === s);
               return { size: s, stock: found ? found.stock : 0 };
@@ -47,7 +49,20 @@ const ProductForm = () => {
       };
       fetchProduct();
     }
-  }, [id]);
+  }, [id, isEdit]);
+
+  const [categories, setCategories] = useState([]);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await API.get('/categories');
+        setCategories(data.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -123,15 +138,29 @@ const ProductForm = () => {
           </div>
         </div>
 
-        {/* SKU & Category */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* SKU, Main Category, Sub Category */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">SKU *</label>
             <input name="sku" value={form.sku} onChange={handleChange} required className="input-field" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Category *</label>
-            <input name="category" value={form.category} onChange={handleChange} required className="input-field" placeholder="e.g., Kurtis" />
+            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Main Category *</label>
+            <select name="mainCategory" value={form.mainCategory} onChange={(e) => setForm({ ...form, mainCategory: e.target.value, subCategory: '' })} required className="input-field">
+              <option value="">Select Main Category</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Sub Category *</label>
+            <select name="subCategory" value={form.subCategory} onChange={handleChange} required className="input-field" disabled={!form.mainCategory}>
+              <option value="">Select Sub Category</option>
+              {categories.find(c => c.name === form.mainCategory)?.subcategories.map(s => (
+                <option key={s.slug} value={s.name}>{s.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 
