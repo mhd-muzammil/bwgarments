@@ -19,7 +19,7 @@ const Products = () => {
   const currentSort = searchParams.get('sort') || 'newest';
   const currentPage = parseInt(searchParams.get('page')) || 1;
 
-  // Fetch categories from API
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -30,7 +30,7 @@ const Products = () => {
     fetchCategories();
   }, []);
 
-  // Fetch products
+  
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -73,14 +73,14 @@ const Products = () => {
 
   return (
     <div className="animate-fade-in">
-      {/* ─── HERO BANNER ─── */}
+
       <div className="bg-primary text-secondary py-14 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40 pointer-events-none"></div>
         <div className="relative z-10">
           <h1 className="font-heading text-4xl sm:text-5xl font-bold tracking-wide mb-3">
             Shop
           </h1>
-          {/* Categories Toggle */}
+         
           <button
             onClick={() => setShowCategories(!showCategories)}
             className="inline-flex items-center gap-2 text-grey-300 text-sm uppercase tracking-widest hover:text-white transition-colors"
@@ -90,7 +90,7 @@ const Products = () => {
           </button>
         </div>
 
-        {/* Categories Dropdown Overlay */}
+       
         <div className={`absolute left-0 right-0 z-20 bg-grey-900/98 transition-all duration-500 overflow-hidden ${showCategories ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
           style={{ top: '100%' }}
         >
@@ -131,7 +131,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* ─── BREADCRUMBS & RESULT COUNT ─── */}
+
       <div className="container-custom">
         <div className="flex items-center justify-between py-4 border-b border-grey-200">
           <nav className="flex items-center gap-1.5 text-xs text-grey-500">
