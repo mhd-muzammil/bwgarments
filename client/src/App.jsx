@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Outlet, Link, useLocation } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState, useCallback } from 'react';
+import SplashScreen from './components/SplashScreen';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -105,6 +106,18 @@ const AdminLayout = () => {
 };
 
 function App() {
+  const [showSplash, setShowSplash] = useState(() => {
+    if (sessionStorage.getItem('bw_splash_shown')) return false;
+    return true;
+  });
+
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem('bw_splash_shown', '1');
+    setShowSplash(false);
+  }, []);
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
+
   return (
     <Router>
       <AuthProvider>
