@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineMenu, HiOutlineX, HiOutlineSearch } from 'react-icons/hi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import CartDrawer from '../CartDrawer';
 
 const announcements = [
   'FREE SHIPPING ON ORDERS ABOVE Rs1,499',
@@ -15,6 +16,7 @@ const Navbar = () => {
   const { cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,6 +32,7 @@ const Navbar = () => {
   useEffect(() => {
     setMobileOpen(false);
     setUserMenuOpen(false);
+    setCartOpen(false);
   }, [location.pathname]);
 
   // Close user menu on outside click
@@ -119,15 +122,15 @@ const Navbar = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-1 sm:gap-3">
-              {/* Cart */}
-              <Link to="/cart" className="relative p-2 hover:bg-grey-100 transition-colors group">
+              {/* Cart — opens drawer */}
+              <button onClick={() => setCartOpen(true)} className="relative p-2 hover:bg-grey-100 transition-colors group">
                 <HiOutlineShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 {cartCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 bg-accent text-primary text-[9px] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center animate-bounce-in">
                     {cartCount}
                   </span>
                 )}
-              </Link>
+              </button>
 
               {/* User */}
               {user ? (
@@ -241,6 +244,9 @@ const Navbar = () => {
           </div>
         )}
       </nav>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   );
 };
