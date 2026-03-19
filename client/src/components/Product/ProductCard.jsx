@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPrice, calcDiscount } from '../../utils/formatPrice';
 import { HiHeart, HiShoppingBag, HiEye } from 'react-icons/hi';
@@ -6,10 +6,14 @@ import QuickView from './QuickView';
 
 const ProductCard = ({ product }) => {
   const [showQuickView, setShowQuickView] = useState(false);
+  const [imgIndex, setImgIndex] = useState(0);
+  const touchRef = useRef({ startX: 0, startY: 0, swiping: false });
   const discountPct = calcDiscount(product.price, product.discount);
   const totalStock = product.sizes?.reduce((sum, s) => sum + s.stock, 0) ?? product.stock ?? 0;
   const isSoldOut = product.soldOut || totalStock === 0;
   const isNew = new Date() - new Date(product.createdAt) < 7 * 24 * 60 * 60 * 1000;
+  const images = product.images?.length > 0 ? product.images : ['https://via.placeholder.com/500x666'];
+  const hasMultiple = images.length > 1;
 
   const handleQuickView = (e) => {
     e.preventDefault();
@@ -17,25 +21,80 @@ const ProductCard = ({ product }) => {
     setShowQuickView(true);
   };
 
+  // Touch swipe handlers for mobile carousel
+  const onTouchStart = useCallback((e) => {
+    touchRef.current.startX = e.touches[0].clientX;
+    touchRef.current.startY = e.touches[0].clientY;
+    touchRef.current.swiping = false;
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    const dx = e.touches[0].clientX - touchRef.current.startX;
+    const dy = e.touches[0].clientY - touchRef.current.startY;
+    // Only count as swipe if horizontal movement is dominant
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 15) {
+      touchRef.current.swiping = true;
+    }
+  }, []);
+
+  const onTouchEnd = useCallback((e) => {
+    if (!touchRef.current.swiping || !hasMultiple) return;
+    e.preventDefault(); // Prevent link navigation on swipe
+    const dx = e.changedTouches[0].clientX - touchRef.current.startX;
+    if (dx < -40) {
+      setImgIndex((i) => (i + 1) % images.length);
+    } else if (dx > 40) {
+      setImgIndex((i) => (i - 1 + images.length) % images.length);
+    }
+  }, [hasMultiple, images.length]);
+
+  const handleClick = useCallback((e) => {
+    // Block navigation if user just swiped
+    if (touchRef.current.swiping) {
+      e.preventDefault();
+    }
+  }, []);
+
   return (
     <>
-      <Link to={`/products/${product._id}`} className="group block">
+      <Link to={`/products/${product._id}`} className="group block" onClick={handleClick}>
         {/* Image Container */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-grey-100">
+        <div
+          className="relative aspect-[3/4] overflow-hidden bg-grey-100"
+          onTouchStart={hasMultiple ? onTouchStart : undefined}
+          onTouchMove={hasMultiple ? onTouchMove : undefined}
+          onTouchEnd={hasMultiple ? onTouchEnd : undefined}
+        >
+          {/* Mobile: current image based on swipe index */}
           <img
-            src={product.images?.[0] || 'https://via.placeholder.com/500x666'}
+            src={images[imgIndex]}
             alt={product.title}
-            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 sm:block"
             loading="lazy"
           />
 
-          {product.images?.[1] && (
+          {/* Desktop: hover to see second image */}
+          {hasMultiple && (
             <img
-              src={product.images[1]}
+              src={images[imgIndex === 0 ? 1 : imgIndex]}
               alt={`${product.title} alternate`}
-              className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500 hidden sm:block"
               loading="lazy"
             />
+          )}
+
+          {/* Mobile dot indicators */}
+          {hasMultiple && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 sm:hidden">
+              {images.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    i === imgIndex ? 'bg-white w-4' : 'bg-white/50 w-1.5'
+                  }`}
+                />
+              ))}
+            </div>
           )}
 
           {/* Badges */}
@@ -61,9 +120,9 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* Hover Action Icons */}
+          {/* Hover Action Icons (desktop) */}
           {!isSoldOut && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-linear-to-t from-black/30 to-transparent pt-8">
+            <div className="absolute bottom-0 left-0 right-0 p-3 items-center justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-linear-to-t from-black/30 to-transparent pt-8 hidden sm:flex">
               <span className="w-9 h-9 bg-white flex items-center justify-center shadow-md hover:bg-primary hover:text-white transition-all duration-200 hover:scale-110 cursor-pointer">
                 <HiHeart className="w-4 h-4" />
               </span>
