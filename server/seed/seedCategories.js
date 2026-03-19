@@ -4,6 +4,7 @@ const Category = require('../models/Category');
 const connectDB = require('../config/db');
 
 dotenv.config({ path: '../.env' });
+dotenv.config();
 
 const categories = [
   {

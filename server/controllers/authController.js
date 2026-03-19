@@ -2,11 +2,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const logger = require('../config/logger');
 
-const COOKIE_OPTIONS = {
+// Cookie options — cross-origin requires sameSite: 'none' + secure: true
+const getCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-};
+  secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin cookies
+});
 
 // Generate access token (short-lived)
 const generateAccessToken = (id) => {
@@ -24,15 +25,24 @@ const generateRefreshToken = (id) => {
 
 // Set both tokens as httpOnly cookies
 const setTokenCookies = (res, accessToken, refreshToken) => {
+  const opts = getCookieOptions();
+
   res.cookie('accessToken', accessToken, {
-    ...COOKIE_OPTIONS,
+    ...opts,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
   res.cookie('refreshToken', refreshToken, {
-    ...COOKIE_OPTIONS,
+    ...opts,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+};
+
+// Clear both cookies
+const clearTokenCookies = (res) => {
+  const opts = getCookieOptions();
+  res.cookie('accessToken', '', { ...opts, expires: new Date(0) });
+  res.cookie('refreshToken', '', { ...opts, expires: new Date(0) });
 };
 
 // @desc    Register user
@@ -155,10 +165,7 @@ exports.getMe = async (req, res, next) => {
 exports.logout = async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { refreshToken: null });
-
-    res.cookie('accessToken', '', { httpOnly: true, expires: new Date(0) });
-    res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) });
-
+    clearTokenCookies(res);
     res.status(200).json({ success: true, message: 'Logged out' });
   } catch (error) {
     next(error);

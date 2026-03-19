@@ -1,8 +1,14 @@
 import axios from 'axios';
 
+// In production, VITE_API_URL points to the Render server (e.g. https://bwgarments-api.onrender.com)
+// In development, Vite proxy handles /api -> localhost:5000
+const baseURL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 const API = axios.create({
-  baseURL: '/api',
-  withCredentials: true, // Send cookies with every request
+  baseURL,
+  withCredentials: true, // Send cookies with every request (cross-origin)
 });
 
 // Response interceptor — handle token refresh via cookies
@@ -15,12 +21,13 @@ API.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Refresh tokens are in httpOnly cookies — just call refresh
-        await axios.post('/api/auth/refresh', {}, { withCredentials: true });
-        // New access token is set as httpOnly cookie automatically
+        const refreshURL = import.meta.env.VITE_API_URL
+          ? `${import.meta.env.VITE_API_URL}/api/auth/refresh`
+          : '/api/auth/refresh';
+
+        await axios.post(refreshURL, {}, { withCredentials: true });
         return API(originalRequest);
       } catch (refreshError) {
-        // Clear user data and redirect to login
         localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);

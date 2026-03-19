@@ -2,18 +2,18 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI environment variable is not set');
+    }
+
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000, // 5s timeout instead of hanging forever
+      serverSelectionTimeoutMS: 10000,
     });
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    console.error('');
-    console.error('Make sure MongoDB is running. Options:');
-    console.error('  1. Start local MongoDB:  mongod');
-    console.error('  2. Use MongoDB Atlas:    Update MONGO_URI in ../.env');
-    console.error('');
+    console.error(`MongoDB Connection Error: ${error.message}`);
     throw error;
   }
 };

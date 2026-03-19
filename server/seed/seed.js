@@ -4,7 +4,9 @@ const crypto = require('crypto');
 const Product = require('../models/Product');
 const User = require('../models/User');
 
+// Load .env from parent dir in dev; in production env vars are injected
 dotenv.config({ path: '../.env' });
+dotenv.config(); // Also try CWD for Render shell
 
 const products = [
   {

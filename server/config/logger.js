@@ -7,37 +7,39 @@ const logFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
   return `${timestamp} [${level}]: ${stack || message}${metaStr}`;
 });
 
-const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: combine(
-    errors({ stack: true }),
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat
-  ),
-  defaultMeta: { service: 'bw-garments' },
-  transports: [
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      maxsize: 5242880,
-      maxFiles: 5,
-    }),
-  ],
-});
+const transports = [];
 
-// Console output in development
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
+// In production (Render/Railway), log to stdout only — no file system writes
+if (process.env.NODE_ENV === 'production') {
+  transports.push(
     new winston.transports.Console({
-      format: combine(colorize(), logFormat),
+      format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat),
     })
   );
+} else {
+  // Development: console with colors + file logs
+  transports.push(
+    new winston.transports.Console({
+      format: combine(colorize(), timestamp({ format: 'HH:mm:ss' }), logFormat),
+    })
+  );
+
+  try {
+    transports.push(
+      new winston.transports.File({ filename: 'logs/error.log', level: 'error', maxsize: 5242880, maxFiles: 5 }),
+      new winston.transports.File({ filename: 'logs/combined.log', maxsize: 5242880, maxFiles: 5 })
+    );
+  } catch {
+    // File logging optional in dev
+  }
 }
+
+const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  format: combine(errors({ stack: true }), timestamp(), logFormat),
+  defaultMeta: { service: 'bw-garments' },
+  transports,
+});
 
 // Stream for Morgan HTTP logging
 logger.stream = {
