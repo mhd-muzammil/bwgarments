@@ -34,6 +34,7 @@ const CouponManager = lazy(() => import('./pages/admin/CouponManager'));
 
 import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft, HiChartBar, HiTag, HiUsers, HiArchive, HiTicket, HiClock } from 'react-icons/hi';
 import WhatsAppButton from './components/WhatsAppButton';
+import BackToTop from './components/BackToTop';
 
 // Admin Layout
 const AdminLayout = () => {
@@ -165,6 +166,7 @@ function App() {
             <Footer />
             <MobileBottomNav />
             <WhatsAppButton />
+            <BackToTop />
           </div>
         </CartProvider>
       </AuthProvider>
