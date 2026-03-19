@@ -23,8 +23,10 @@ const ProductManager = lazy(() => import('./pages/admin/ProductManager'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 const OrderManager = lazy(() => import('./pages/admin/OrderManager'));
 const Analytics = lazy(() => import('./pages/admin/Analytics'));
+const CategoryManager = lazy(() => import('./pages/admin/CategoryManager'));
+const CustomerManager = lazy(() => import('./pages/admin/CustomerManager'));
 
-import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft, HiChartBar } from 'react-icons/hi';
+import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft, HiChartBar, HiTag, HiUsers } from 'react-icons/hi';
 import WhatsAppButton from './components/WhatsAppButton';
 
 // Admin Layout
@@ -34,7 +36,9 @@ const AdminLayout = () => {
     { to: '/admin', label: 'Dashboard', icon: HiViewGrid },
     { to: '/admin/analytics', label: 'Analytics', icon: HiChartBar },
     { to: '/admin/products', label: 'Products', icon: HiCube },
+    { to: '/admin/categories', label: 'Categories', icon: HiTag },
     { to: '/admin/orders', label: 'Orders', icon: HiClipboardList },
+    { to: '/admin/customers', label: 'Customers', icon: HiUsers },
   ];
 
   return (
@@ -134,7 +138,9 @@ function App() {
                   <Route path="products" element={<ProductManager />} />
                   <Route path="products/new" element={<ProductForm />} />
                   <Route path="products/:id/edit" element={<ProductForm />} />
+                  <Route path="categories" element={<CategoryManager />} />
                   <Route path="orders" element={<OrderManager />} />
+                  <Route path="customers" element={<CustomerManager />} />
                 </Route>
               </Routes>
             </main>
