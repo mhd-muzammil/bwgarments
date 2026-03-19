@@ -4,7 +4,7 @@ import { HiX, HiChevronLeft, HiChevronRight, HiShoppingBag, HiExternalLink } fro
 import { formatPrice, calcDiscount } from '../../utils/formatPrice';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
+import { productToast, errorToast } from '../../utils/customToast';
 
 const QuickView = ({ product, onClose }) => {
   const [selectedSize, setSelectedSize] = useState(null);
@@ -26,21 +26,21 @@ const QuickView = ({ product, onClose }) => {
 
   const handleAddToCart = async () => {
     if (!user) {
-      toast.error('Please login to add to cart');
+      errorToast('Please login to add to cart');
       onClose();
       navigate('/login');
       return;
     }
     if (!selectedSize) {
-      toast.error('Please select a size');
+      errorToast('Please select a size');
       return;
     }
     const result = await addToCart(product._id, selectedSize, quantity);
     if (result.success) {
-      toast.success('Added to cart!');
+      productToast('Added to cart!', product);
       onClose();
     } else {
-      toast.error(result.message);
+      errorToast(result.message);
     }
   };
 
