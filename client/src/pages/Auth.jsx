@@ -3,6 +3,32 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
+const isDev = import.meta.env.DEV; // true in dev, false in production build
+
+const DemoCredentials = ({ onFill }) => {
+  if (!isDev) return null;
+  return (
+    <div className="w-full mt-4 p-3 bg-grey-50 border border-dashed border-grey-300 text-[11px] text-grey-500">
+      <p className="font-semibold text-grey-600 mb-1.5">Demo Accounts:</p>
+      <button
+        type="button"
+        onClick={() => onFill('admin@bwgarments.com', 'Admin@1234')}
+        className="block w-full text-left hover:text-primary transition-colors py-0.5"
+      >
+        Admin: admin@bwgarments.com / Admin@1234
+      </button>
+      <button
+        type="button"
+        onClick={() => onFill('user@bwgarments.com', 'User@1234')}
+        className="block w-full text-left hover:text-primary transition-colors py-0.5"
+      >
+        User: user@bwgarments.com / User@1234
+      </button>
+      <p className="text-[9px] text-grey-400 mt-1">Click to auto-fill. Hidden in production.</p>
+    </div>
+  );
+};
+
 const Auth = () => {
   const location = useLocation();
   const [isRegister, setIsRegister] = useState(location.pathname === '/register');
@@ -143,6 +169,7 @@ const Auth = () => {
                 <button type="submit" disabled={loading} className="btn-primary w-full text-center mt-2">
                   {loading ? 'Signing in...' : 'Sign In'}
                 </button>
+                <DemoCredentials onFill={(email, password) => setLoginForm({ email, password })} />
               </form>
             )}
           </div>
@@ -239,6 +266,7 @@ const Auth = () => {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+            <DemoCredentials onFill={(email, password) => setLoginForm({ email, password })} />
           </form>
         </div>
 

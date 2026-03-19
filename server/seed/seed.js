@@ -186,9 +186,9 @@ const seedDB = async () => {
     await Product.deleteMany({});
     await User.deleteMany({});
 
-    // Generate secure random admin password for seeding
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@' + crypto.randomBytes(4).toString('hex');
-    const userPassword = process.env.SEED_USER_PASSWORD || 'User@' + crypto.randomBytes(4).toString('hex');
+    // Use env vars for passwords, or fixed dev defaults that match the Auth page demo box
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@1234';
+    const userPassword = process.env.SEED_USER_PASSWORD || 'User@1234';
 
     // Create admin user
     await User.create({
