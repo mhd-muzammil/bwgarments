@@ -75,7 +75,7 @@ const Products = () => {
     <div className="animate-fade-in">
 
       <div className="bg-primary text-secondary py-14 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-linear-to-b from-black/20 to-black/40 pointer-events-none"></div>
         <div className="relative z-10">
           <h1 className="font-heading text-4xl sm:text-5xl font-bold tracking-wide mb-3">
             Shop

@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
+import MobileBottomNav from './components/Layout/MobileBottomNav';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages (eager — customer-facing)
@@ -16,6 +17,7 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import NotFound from './pages/NotFound';
 
 // Admin (lazy — code-split, only loaded when admin navigates)
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
@@ -153,9 +155,13 @@ function App() {
                   <Route path="coupons" element={<CouponManager />} />
                   <Route path="activity" element={<ActivityLog />} />
                 </Route>
+
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Footer />
+            <MobileBottomNav />
             <WhatsAppButton />
           </div>
         </CartProvider>

@@ -38,7 +38,7 @@ const CategoryTabs = () => {
           <div
             key={cat._id}
             onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
-            className={`group relative overflow-hidden bg-grey-100 aspect-[4/5] cursor-pointer border-2 transition-all duration-300 ${
+            className={`group relative overflow-hidden bg-grey-100 aspect-4/5 cursor-pointer border-2 transition-all duration-300 ${
               activeCategory === cat.name ? 'border-primary shadow-2xl scale-[1.02]' : 'border-transparent'
             }`}
           >
@@ -49,7 +49,7 @@ const CategoryTabs = () => {
               loading="lazy"
             />
             {/* Gradient Overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${
+            <div className={`absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${
               activeCategory === cat.name ? 'opacity-90' : 'opacity-70 group-hover:opacity-90'
             }`}></div>
             
