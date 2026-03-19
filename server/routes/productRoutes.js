@@ -11,20 +11,19 @@ const {
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
-const upload = require('../middleware/upload');
+const { createProductRules, updateProductRules, mongoIdParam } = require('../middleware/validate');
 
-// Public routes — static paths FIRST
 // Admin routes — must be before /:id
 router.get('/admin/all', protect, authorize('admin'), getAdminProducts);
-router.post('/', protect, authorize('admin'), upload.array('images', 5), createProduct);
+router.post('/', protect, authorize('admin'), createProductRules, createProduct);
 
-// Public — parameterized LAST
+// Public
 router.get('/', getProducts);
-router.get('/:id', getProduct);
+router.get('/:id', mongoIdParam, getProduct);
 
 // Admin — parameterized
-router.put('/:id', protect, authorize('admin'), upload.array('images', 5), updateProduct);
-router.delete('/:id', protect, authorize('admin'), deleteProduct);
-router.patch('/:id/soldout', protect, authorize('admin'), toggleSoldOut);
+router.put('/:id', protect, authorize('admin'), updateProductRules, updateProduct);
+router.delete('/:id', protect, authorize('admin'), mongoIdParam, deleteProduct);
+router.patch('/:id/soldout', protect, authorize('admin'), mongoIdParam, toggleSoldOut);
 
 module.exports = router;

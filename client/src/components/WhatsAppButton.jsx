@@ -1,11 +1,12 @@
 import { FaWhatsapp } from 'react-icons/fa';
 
+const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || '916380422961';
+
 const WhatsAppButton = () => {
-  const phoneNumber = '916380422961';
   const message = encodeURIComponent(
     'Hi *Black and White Garments*! I need more info about blackandwhitegarments.com'
   );
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+  const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
 
   return (
     <a

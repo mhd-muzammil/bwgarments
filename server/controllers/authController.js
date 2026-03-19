@@ -1,5 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const logger = require('../config/logger');
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+};
 
 // Generate access token (short-lived)
 const generateAccessToken = (id) => {
@@ -12,6 +19,19 @@ const generateAccessToken = (id) => {
 const generateRefreshToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d',
+  });
+};
+
+// Set both tokens as httpOnly cookies
+const setTokenCookies = (res, accessToken, refreshToken) => {
+  res.cookie('accessToken', accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
+
+  res.cookie('refreshToken', refreshToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
 
@@ -31,21 +51,15 @@ exports.register = async (req, res, next) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // Store refresh token in DB
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
-    // Set refresh token as httpOnly cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    setTokenCookies(res, accessToken, refreshToken);
+
+    logger.info(`User registered: ${user.email}`);
 
     res.status(201).json({
       success: true,
-      accessToken,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
@@ -58,10 +72,6 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password' });
-    }
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
@@ -79,16 +89,12 @@ exports.login = async (req, res, next) => {
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setTokenCookies(res, accessToken, refreshToken);
+
+    logger.info(`User logged in: ${user.email}`);
 
     res.status(200).json({
       success: true,
-      accessToken,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
@@ -119,14 +125,12 @@ exports.refreshToken = async (req, res, next) => {
     user.refreshToken = newRefreshToken;
     await user.save({ validateBeforeSave: false });
 
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setTokenCookies(res, accessToken, newRefreshToken);
 
-    res.status(200).json({ success: true, accessToken });
+    res.status(200).json({
+      success: true,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    });
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid refresh token' });
   }
@@ -152,10 +156,8 @@ exports.logout = async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { refreshToken: null });
 
-    res.cookie('refreshToken', '', {
-      httpOnly: true,
-      expires: new Date(0),
-    });
+    res.cookie('accessToken', '', { httpOnly: true, expires: new Date(0) });
+    res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) });
 
     res.status(200).json({ success: true, message: 'Logged out' });
   } catch (error) {

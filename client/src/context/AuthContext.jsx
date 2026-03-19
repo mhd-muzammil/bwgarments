@@ -15,12 +15,37 @@ export const AuthProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+
+  // Verify session on mount — cookies are sent automatically
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const { data } = await API.get('/auth/me');
+        const userData = data.user;
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+      } catch {
+        // Session invalid — clear local state
+        localStorage.removeItem('user');
+        setUser(null);
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    if (user) {
+      verifySession();
+    } else {
+      setInitializing(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (email, password) => {
     setLoading(true);
     try {
       const { data } = await API.post('/auth/login', { email, password });
-      localStorage.setItem('accessToken', data.accessToken);
+      // Tokens are set as httpOnly cookies by the server
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       return { success: true };
@@ -35,7 +60,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await API.post('/auth/register', { name, email, password });
-      localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       return { success: true };
@@ -49,13 +73,22 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await API.post('/auth/logout');
-    } catch {}
-    localStorage.removeItem('accessToken');
+    } catch {
+      // Logout even if server call fails
+    }
     localStorage.removeItem('user');
     setUser(null);
   };
 
-  const value = { user, loading, login, register, logout, isAdmin: user?.role === 'admin' };
+  const value = {
+    user,
+    loading,
+    initializing,
+    login,
+    register,
+    logout,
+    isAdmin: user?.role === 'admin',
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

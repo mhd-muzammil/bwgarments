@@ -8,6 +8,7 @@ const xss = require('xss-clean');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
 
 // Load env
@@ -22,7 +23,7 @@ app.use(xss());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: { success: false, message: 'Too many requests, please try again later' },
 });
@@ -48,12 +49,13 @@ app.use(
   })
 );
 
-// Logging
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+// HTTP request logging via Winston
+app.use(
+  morgan('short', {
+    stream: logger.stream,
+    skip: (req) => req.url === '/api/health',
+  })
+);
 
 // Mount routes
 app.use('/api/auth', authLimiter, require('./routes/authRoutes'));
@@ -68,22 +70,33 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running', timestamp: new Date().toISOString() });
 });
 
-// Error handler
+// Serve static files in production (client build)
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.use(express.static(path.join(__dirname, 'public')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+}
+
+// Error handler (must be last)
 app.use(errorHandler);
 
-// Start server — connect to DB first, then listen
+// Start server
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`🖤 Black & White Garments API running on port ${PORT}`);
+      logger.info(`BW Garments API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };
 
 startServer();
+
+module.exports = app; // Export for testing

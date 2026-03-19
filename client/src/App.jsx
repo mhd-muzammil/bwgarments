@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Outlet, Link, useLocation } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -6,7 +7,7 @@ import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Pages
+// Pages (eager — customer-facing)
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -16,13 +17,14 @@ import Orders from './pages/Orders';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
-// Admin
-import Dashboard from './pages/admin/Dashboard';
-import ProductManager from './pages/admin/ProductManager';
-import ProductForm from './pages/admin/ProductForm';
-import OrderManager from './pages/admin/OrderManager';
+// Admin (lazy — code-split, only loaded when admin navigates)
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const ProductManager = lazy(() => import('./pages/admin/ProductManager'));
+const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
+const OrderManager = lazy(() => import('./pages/admin/OrderManager'));
+const Analytics = lazy(() => import('./pages/admin/Analytics'));
 
-import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft } from 'react-icons/hi';
+import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft, HiChartBar } from 'react-icons/hi';
 import WhatsAppButton from './components/WhatsAppButton';
 
 // Admin Layout
@@ -30,6 +32,7 @@ const AdminLayout = () => {
   const location = useLocation();
   const links = [
     { to: '/admin', label: 'Dashboard', icon: HiViewGrid },
+    { to: '/admin/analytics', label: 'Analytics', icon: HiChartBar },
     { to: '/admin/products', label: 'Products', icon: HiCube },
     { to: '/admin/orders', label: 'Orders', icon: HiClipboardList },
   ];
@@ -72,7 +75,14 @@ const AdminLayout = () => {
 
           {/* Content */}
           <main className="flex-1 min-w-0">
-            <Outlet />
+            <Suspense fallback={
+              <div className="space-y-4 animate-pulse">
+                <div className="h-8 bg-grey-100 w-48"></div>
+                <div className="h-64 bg-grey-100"></div>
+              </div>
+            }>
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -120,6 +130,7 @@ function App() {
                   <ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>
                 }>
                   <Route index element={<Dashboard />} />
+                  <Route path="analytics" element={<Analytics />} />
                   <Route path="products" element={<ProductManager />} />
                   <Route path="products/new" element={<ProductForm />} />
                   <Route path="products/:id/edit" element={<ProductForm />} />

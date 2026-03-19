@@ -34,9 +34,9 @@ const productSchema = new mongoose.Schema(
       type: [String],
       validate: {
         validator: function (v) {
-          return v.length === 5;
+          return v.length >= 1 && v.length <= 10;
         },
-        message: 'Product must have exactly 5 images',
+        message: 'Product must have between 1 and 10 images',
       },
     },
     price: {

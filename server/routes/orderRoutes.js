@@ -9,16 +9,17 @@ const {
 } = require('../controllers/orderController');
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
+const { checkoutRules, updateOrderStatusRules, mongoIdParam } = require('../middleware/validate');
 
 router.use(protect); // All order routes require auth
 
-router.post('/checkout', checkout);
+router.post('/checkout', checkoutRules, checkout);
 router.get('/', getMyOrders);
 
 // Admin routes — must come before /:id
 router.get('/admin/all', authorize('admin'), getAllOrders);
-router.put('/:id/status', authorize('admin'), updateOrderStatus);
+router.put('/:id/status', authorize('admin'), updateOrderStatusRules, updateOrderStatus);
 
-router.get('/:id', getOrder);
+router.get('/:id', mongoIdParam, getOrder);
 
 module.exports = router;

@@ -2,19 +2,10 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: '/api',
-  withCredentials: true,
+  withCredentials: true, // Send cookies with every request
 });
 
-// Request interceptor — attach access token
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Response interceptor — handle token refresh
+// Response interceptor — handle token refresh via cookies
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -24,12 +15,12 @@ API.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { data } = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
-        localStorage.setItem('accessToken', data.accessToken);
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        // Refresh tokens are in httpOnly cookies — just call refresh
+        await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        // New access token is set as httpOnly cookie automatically
         return API(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('accessToken');
+        // Clear user data and redirect to login
         localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);

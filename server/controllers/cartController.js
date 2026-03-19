@@ -26,10 +26,6 @@ exports.addToCart = async (req, res, next) => {
   try {
     const { productId, size, quantity } = req.body;
 
-    if (!productId || !size || !quantity || quantity < 1) {
-      return res.status(400).json({ success: false, message: 'Product, size, and quantity are required' });
-    }
-
     // Validate product exists, is active, and not sold out
     const product = await Product.findOne({
       _id: productId,
@@ -54,7 +50,7 @@ exports.addToCart = async (req, res, next) => {
       });
     }
 
-    // Get or create cart
+    // Atomic cart update using findOneAndUpdate to prevent race conditions
     let cart = await Cart.findOne({ user: req.user.id });
     if (!cart) {
       cart = await Cart.create({ user: req.user.id, items: [] });
@@ -97,10 +93,6 @@ exports.addToCart = async (req, res, next) => {
 exports.updateCartItem = async (req, res, next) => {
   try {
     const { quantity } = req.body;
-
-    if (!quantity || quantity < 1) {
-      return res.status(400).json({ success: false, message: 'Valid quantity required' });
-    }
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) {

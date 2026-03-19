@@ -1,12 +1,12 @@
 const Product = require('../models/Product');
-const cloudinary = require('../config/cloudinary');
+const logger = require('../config/logger');
 
 // @desc    Get all products (with pagination, search, filter)
 // @route   GET /api/products
 exports.getProducts = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 12;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 12));
     const skip = (page - 1) * limit;
 
     // Build filter
@@ -72,39 +72,19 @@ exports.getProduct = async (req, res, next) => {
   }
 };
 
-// @desc    Create product (Admin)
+// @desc    Create product (Admin) — accepts JSON with image URLs
 // @route   POST /api/products
 exports.createProduct = async (req, res, next) => {
   try {
-    const { title, description, price, discount, sizes, sku, mainCategory, subCategory } = req.body;
+    const { title, description, price, discount, sizes, sku, mainCategory, subCategory, images } = req.body;
 
-    // Parse sizes if sent as string
     const parsedSizes = typeof sizes === 'string' ? JSON.parse(sizes) : sizes;
-
-    // Handle image uploads to Cloudinary
-    let images = [];
-    if (req.files && req.files.length > 0) {
-      if (req.files.length !== 5) {
-        return res.status(400).json({ success: false, message: 'Exactly 5 images are required' });
-      }
-
-      for (const file of req.files) {
-        const b64 = Buffer.from(file.buffer).toString('base64');
-        const dataURI = `data:${file.mimetype};base64,${b64}`;
-        const result = await cloudinary.uploader.upload(dataURI, {
-          folder: 'bw-garments',
-          transformation: [{ width: 800, height: 1000, crop: 'fill', quality: 'auto' }],
-        });
-        images.push(result.secure_url);
-      }
-    } else if (req.body.images) {
-      images = typeof req.body.images === 'string' ? JSON.parse(req.body.images) : req.body.images;
-    }
+    const parsedImages = typeof images === 'string' ? JSON.parse(images) : images;
 
     const product = await Product.create({
       title,
       description,
-      images,
+      images: parsedImages,
       price: Number(price),
       discount: Number(discount) || 0,
       sizes: parsedSizes,
@@ -113,6 +93,7 @@ exports.createProduct = async (req, res, next) => {
       subCategory,
     });
 
+    logger.info(`Product created: ${product.sku} - ${product.title}`);
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     next(error);
@@ -131,34 +112,21 @@ exports.updateProduct = async (req, res, next) => {
 
     const updateData = { ...req.body };
 
-    // Parse sizes if string
     if (updateData.sizes && typeof updateData.sizes === 'string') {
       updateData.sizes = JSON.parse(updateData.sizes);
     }
-
-    // Handle new image uploads
-    if (req.files && req.files.length === 5) {
-      const images = [];
-      for (const file of req.files) {
-        const b64 = Buffer.from(file.buffer).toString('base64');
-        const dataURI = `data:${file.mimetype};base64,${b64}`;
-        const result = await cloudinary.uploader.upload(dataURI, {
-          folder: 'bw-garments',
-          transformation: [{ width: 800, height: 1000, crop: 'fill', quality: 'auto' }],
-        });
-        images.push(result.secure_url);
-      }
-      updateData.images = images;
+    if (updateData.images && typeof updateData.images === 'string') {
+      updateData.images = JSON.parse(updateData.images);
     }
-
     if (updateData.price) updateData.price = Number(updateData.price);
-    if (updateData.discount) updateData.discount = Number(updateData.discount);
+    if (updateData.discount !== undefined) updateData.discount = Number(updateData.discount);
 
     product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
 
+    logger.info(`Product updated: ${product.sku}`);
     res.status(200).json({ success: true, data: product });
   } catch (error) {
     next(error);
@@ -179,6 +147,7 @@ exports.deleteProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
+    logger.info(`Product deactivated: ${product.sku}`);
     res.status(200).json({ success: true, message: 'Product deactivated' });
   } catch (error) {
     next(error);
@@ -198,6 +167,7 @@ exports.toggleSoldOut = async (req, res, next) => {
     product.soldOut = !product.soldOut;
     await product.save();
 
+    logger.info(`Product ${product.sku} soldOut toggled to ${product.soldOut}`);
     res.status(200).json({ success: true, data: product });
   } catch (error) {
     next(error);
@@ -208,8 +178,8 @@ exports.toggleSoldOut = async (req, res, next) => {
 // @route   GET /api/products/admin/all
 exports.getAdminProducts = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
     const [products, total] = await Promise.all([

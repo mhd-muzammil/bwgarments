@@ -8,9 +8,10 @@ const {
   logout,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const { registerRules, loginRules } = require('../middleware/validate');
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', registerRules, register);
+router.post('/login', loginRules, login);
 router.post('/refresh', refreshToken);
 router.get('/me', protect, getMe);
 router.post('/logout', protect, logout);

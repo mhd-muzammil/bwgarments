@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const crypto = require('crypto');
 const Product = require('../models/Product');
 const User = require('../models/User');
 
@@ -13,8 +14,6 @@ const products = [
       'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800',
       'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
       'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800',
-      'https://images.unsplash.com/photo-1583391733981-8b530c07a7e1?w=800',
-      'https://images.unsplash.com/photo-1583391733975-dda1a0a09571?w=800',
     ],
     price: 1999,
     discount: 1049,
@@ -26,7 +25,8 @@ const products = [
       { size: 'XXL', stock: 5 },
     ],
     sku: 'BWG-BLK-CHK-001',
-    category: 'Kurtis',
+    mainCategory: 'Women',
+    subCategory: 'Kurtis',
   },
   {
     title: 'Ivory Pearl Anarkali — White Gold Collection',
@@ -35,8 +35,6 @@ const products = [
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
       'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
       'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800',
-      'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800',
-      'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
     ],
     price: 2499,
     discount: 1299,
@@ -48,7 +46,8 @@ const products = [
       { size: 'XXL', stock: 3 },
     ],
     sku: 'BWG-WHT-ANK-002',
-    category: 'Kurtis',
+    mainCategory: 'Women',
+    subCategory: 'Kurtis',
   },
   {
     title: 'Midnight Palazzo Set — Monochrome Edit',
@@ -57,8 +56,6 @@ const products = [
       'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
       'https://images.unsplash.com/photo-1583391733975-dda1a0a09571?w=800',
-      'https://images.unsplash.com/photo-1583391733981-8b530c07a7e1?w=800',
-      'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800',
     ],
     price: 1799,
     discount: 949,
@@ -70,7 +67,8 @@ const products = [
       { size: 'XXL', stock: 0 },
     ],
     sku: 'BWG-BLK-PLZ-003',
-    category: 'Co-Ords',
+    mainCategory: 'Women',
+    subCategory: 'Tops',
   },
   {
     title: 'Shadow Grey Straight Kurta — Minimal Edit',
@@ -79,8 +77,6 @@ const products = [
       'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
       'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
-      'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
-      'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800',
     ],
     price: 1299,
     discount: 699,
@@ -92,7 +88,8 @@ const products = [
       { size: 'XXL', stock: 7 },
     ],
     sku: 'BWG-GRY-STR-004',
-    category: 'Kurtis',
+    mainCategory: 'Women',
+    subCategory: 'Kurtis',
   },
   {
     title: 'Onyx Velvet Gown — Evening Collection',
@@ -101,8 +98,6 @@ const products = [
       'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800',
       'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
       'https://images.unsplash.com/photo-1583391733981-8b530c07a7e1?w=800',
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
-      'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
     ],
     price: 3499,
     discount: 1849,
@@ -114,7 +109,8 @@ const products = [
       { size: 'XXL', stock: 2 },
     ],
     sku: 'BWG-BLK-VLV-005',
-    category: 'Gowns',
+    mainCategory: 'Women',
+    subCategory: 'Sarees',
   },
   {
     title: 'Pearl White A-Line Kurti — Summer Collection',
@@ -122,9 +118,6 @@ const products = [
     images: [
       'https://images.unsplash.com/photo-1583391733975-dda1a0a09571?w=800',
       'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
-      'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800',
-      'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
     ],
     price: 999,
     discount: 529,
@@ -136,7 +129,8 @@ const products = [
       { size: 'XXL', stock: 10 },
     ],
     sku: 'BWG-WHT-ALN-006',
-    category: 'Kurtis',
+    mainCategory: 'Women',
+    subCategory: 'Kurtis',
   },
   {
     title: 'Charcoal Silk Dupatta Set — Festive Edit',
@@ -145,8 +139,6 @@ const products = [
       'https://images.unsplash.com/photo-1583391733981-8b530c07a7e1?w=800',
       'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800',
       'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
-      'https://images.unsplash.com/photo-1583391733975-dda1a0a09571?w=800',
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
     ],
     price: 2799,
     discount: 1479,
@@ -158,7 +150,8 @@ const products = [
       { size: 'XXL', stock: 0 },
     ],
     sku: 'BWG-GRY-DPT-007',
-    category: 'Dupatta Sets',
+    mainCategory: 'Women',
+    subCategory: 'Sarees',
   },
   {
     title: 'Obsidian Sharara Set — Party Collection',
@@ -167,8 +160,6 @@ const products = [
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
       'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800',
       'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
-      'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800',
-      'https://images.unsplash.com/photo-1583391733981-8b530c07a7e1?w=800',
     ],
     price: 3999,
     discount: 0,
@@ -181,7 +172,8 @@ const products = [
       { size: 'XXL', stock: 0 },
     ],
     sku: 'BWG-BLK-SHR-008',
-    category: 'Sharara Sets',
+    mainCategory: 'Women',
+    subCategory: 'Tops',
   },
 ];
 
@@ -194,33 +186,38 @@ const seedDB = async () => {
     await Product.deleteMany({});
     await User.deleteMany({});
 
+    // Generate secure random admin password for seeding
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@' + crypto.randomBytes(4).toString('hex');
+    const userPassword = process.env.SEED_USER_PASSWORD || 'User@' + crypto.randomBytes(4).toString('hex');
+
     // Create admin user
-    const admin = await User.create({
+    await User.create({
       name: 'Admin',
       email: 'admin@bwgarments.com',
-      password: 'admin123456',
+      password: adminPassword,
       role: 'admin',
     });
 
     // Create test user
-    const user = await User.create({
+    await User.create({
       name: 'Test User',
       email: 'user@bwgarments.com',
-      password: 'user123456',
+      password: userPassword,
       role: 'user',
     });
 
     // Seed products
     await Product.insertMany(products);
 
-    console.log('✅ Database seeded successfully!');
-    console.log('👤 Admin: admin@bwgarments.com / admin123456');
-    console.log('👤 User:  user@bwgarments.com / user123456');
-    console.log(`📦 ${products.length} products created`);
+    console.log('Database seeded successfully!');
+    console.log(`Admin: admin@bwgarments.com / ${adminPassword}`);
+    console.log(`User:  user@bwgarments.com / ${userPassword}`);
+    console.log(`${products.length} products created`);
+    console.log('\nSave these credentials! They are generated fresh each time.');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Seed Error:', error);
+    console.error('Seed Error:', error.message);
     process.exit(1);
   }
 };

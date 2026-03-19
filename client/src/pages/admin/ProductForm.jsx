@@ -20,7 +20,7 @@ const ProductForm = () => {
     mainCategory: '',
     subCategory: '',
     sizes: SIZES.map((s) => ({ size: s, stock: 0 })),
-    images: ['', '', '', '', ''],
+    images: [''],
   });
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const ProductForm = () => {
               const found = p.sizes.find((sz) => sz.size === s);
               return { size: s, stock: found ? found.stock : 0 };
             }),
-            images: p.images?.length === 5 ? p.images : ['', '', '', '', ''],
+            images: p.images?.length > 0 ? p.images : [''],
           });
         } catch {
           navigate('/admin/products');
@@ -83,16 +83,41 @@ const ProductForm = () => {
     setForm({ ...form, images: newImages });
   };
 
+  const addImageField = () => {
+    if (form.images.length >= 10) {
+      toast.error('Maximum 10 images allowed');
+      return;
+    }
+    setForm({ ...form, images: [...form.images, ''] });
+  };
+
+  const removeImageField = (index) => {
+    if (form.images.length <= 1) {
+      toast.error('At least 1 image is required');
+      return;
+    }
+    const newImages = form.images.filter((_, i) => i !== index);
+    setForm({ ...form, images: newImages });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      const filteredImages = form.images.filter((img) => img.trim() !== '');
+      if (filteredImages.length < 1) {
+        toast.error('At least 1 image URL is required');
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         ...form,
         price: Number(form.price),
         discount: Number(form.discount) || 0,
         sizes: form.sizes.filter((s) => s.stock >= 0),
+        images: filteredImages,
       };
 
       if (isEdit) {
@@ -129,11 +154,11 @@ const ProductForm = () => {
         {/* Price & Discount */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Price (₹) *</label>
+            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Price (Rs) *</label>
             <input name="price" type="number" value={form.price} onChange={handleChange} required min="0" className="input-field" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Discount Price (₹)</label>
+            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-1">Discount Price (Rs)</label>
             <input name="discount" type="number" value={form.discount} onChange={handleChange} min="0" className="input-field" />
           </div>
         </div>
@@ -183,11 +208,20 @@ const ProductForm = () => {
           </div>
         </div>
 
-        {/* Images */}
+        {/* Images — dynamic list */}
         <div>
-          <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider block mb-3">
-            Image URLs (5 Required)
-          </label>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-xs font-semibold text-grey-600 uppercase tracking-wider">
+              Image URLs ({form.images.length}/10)
+            </label>
+            <button
+              type="button"
+              onClick={addImageField}
+              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-semibold transition-colors"
+            >
+              <HiPlus className="w-4 h-4" /> Add Image
+            </button>
+          </div>
           <div className="space-y-2">
             {form.images.map((img, idx) => (
               <div key={idx} className="flex gap-2 items-center">
@@ -201,11 +235,18 @@ const ProductForm = () => {
                 {img && (
                   <img src={img} alt="" className="w-10 h-12 object-cover bg-grey-100 flex-shrink-0" />
                 )}
+                <button
+                  type="button"
+                  onClick={() => removeImageField(idx)}
+                  className="text-grey-400 hover:text-red-500 transition-colors flex-shrink-0"
+                >
+                  <HiTrash className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
           <p className="text-[10px] text-grey-400 mt-2">
-            Provide 5 image URLs. Use Cloudinary/Unsplash URLs for best results.
+            Add 1-10 image URLs. Use Cloudinary/Unsplash URLs for best results.
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import API from '../utils/api';
 import { useAuth } from './AuthContext';
 
@@ -14,6 +14,7 @@ export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [cart, setCart] = useState({ items: [] });
   const [loading, setLoading] = useState(false);
+  const pendingRef = useRef(false); // Prevents concurrent cart mutations
 
   const fetchCart = useCallback(async () => {
     if (!user) {
@@ -33,6 +34,8 @@ export const CartProvider = ({ children }) => {
   }, [fetchCart]);
 
   const addToCart = async (productId, size, quantity = 1) => {
+    if (pendingRef.current) return { success: false, message: 'Please wait...' };
+    pendingRef.current = true;
     setLoading(true);
     try {
       const { data } = await API.post('/cart', { productId, size, quantity });
@@ -42,10 +45,13 @@ export const CartProvider = ({ children }) => {
       return { success: false, message: error.response?.data?.message || 'Failed to add to cart' };
     } finally {
       setLoading(false);
+      pendingRef.current = false;
     }
   };
 
   const updateItem = async (itemId, quantity) => {
+    if (pendingRef.current) return { success: false, message: 'Please wait...' };
+    pendingRef.current = true;
     setLoading(true);
     try {
       const { data } = await API.put(`/cart/${itemId}`, { quantity });
@@ -55,21 +61,30 @@ export const CartProvider = ({ children }) => {
       return { success: false, message: error.response?.data?.message || 'Failed to update' };
     } finally {
       setLoading(false);
+      pendingRef.current = false;
     }
   };
 
   const removeItem = async (itemId) => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
     try {
       const { data } = await API.delete(`/cart/${itemId}`);
       setCart(data.data);
-    } catch {}
+    } catch {
+      // Silent fail
+    } finally {
+      pendingRef.current = false;
+    }
   };
 
   const clearCart = async () => {
     try {
       await API.delete('/cart/clear');
       setCart({ items: [] });
-    } catch {}
+    } catch {
+      // Silent fail
+    }
   };
 
   const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);

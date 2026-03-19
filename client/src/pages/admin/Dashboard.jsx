@@ -77,18 +77,22 @@ const Dashboard = () => {
       )}
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Link to="/admin/analytics" className="bg-grey-900 text-white p-5 hover:bg-grey-800 transition-colors">
+          <h3 className="font-heading font-bold mb-1">Analytics</h3>
+          <p className="text-xs text-grey-400">Revenue & performance</p>
+        </Link>
         <Link to="/admin/products" className="bg-primary text-white p-5 hover:bg-grey-800 transition-colors">
-          <h3 className="font-heading font-bold mb-1">Manage Products</h3>
-          <p className="text-xs text-grey-400">Add, edit, delete products</p>
+          <h3 className="font-heading font-bold mb-1">Products</h3>
+          <p className="text-xs text-grey-400">Add, edit, delete</p>
         </Link>
         <Link to="/admin/orders" className="bg-primary text-white p-5 hover:bg-grey-800 transition-colors">
-          <h3 className="font-heading font-bold mb-1">Manage Orders</h3>
-          <p className="text-xs text-grey-400">View & update order status</p>
+          <h3 className="font-heading font-bold mb-1">Orders</h3>
+          <p className="text-xs text-grey-400">View & update status</p>
         </Link>
         <Link to="/admin/products/new" className="bg-accent text-primary p-5 hover:bg-accent-light transition-colors">
           <h3 className="font-heading font-bold mb-1">Add Product</h3>
-          <p className="text-xs text-grey-700">Create new product listing</p>
+          <p className="text-xs text-grey-700">Create new listing</p>
         </Link>
       </div>
     </div>

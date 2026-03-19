@@ -8,12 +8,13 @@ const {
   clearCart,
 } = require('../controllers/cartController');
 const { protect } = require('../middleware/auth');
+const { addToCartRules, updateCartItemRules } = require('../middleware/validate');
 
 router.use(protect); // All cart routes require auth
 
 router.get('/', getCart);
-router.post('/', addToCart);
-router.put('/:itemId', updateCartItem);
+router.post('/', addToCartRules, addToCart);
+router.put('/:itemId', updateCartItemRules, updateCartItem);
 router.delete('/clear', clearCart);
 router.delete('/:itemId', removeCartItem);
 

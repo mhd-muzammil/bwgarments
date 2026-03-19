@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const logger = require('../config/logger');
 
 // @desc    Checkout — create order with Mongo transaction
 // @route   POST /api/orders/checkout
@@ -11,14 +12,6 @@ exports.checkout = async (req, res, next) => {
 
   try {
     const { shippingAddress } = req.body;
-
-    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone ||
-        !shippingAddress.addressLine1 || !shippingAddress.city ||
-        !shippingAddress.state || !shippingAddress.pincode) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ success: false, message: 'Complete shipping address is required' });
-    }
 
     // Get cart
     const cart = await Cart.findOne({ user: req.user.id })
@@ -47,14 +40,14 @@ exports.checkout = async (req, res, next) => {
         });
       }
 
-      // Atomic stock decrement with condition
+      // Atomic stock decrement — use $elemMatch to ensure the SAME array element
+      // matches both size and stock, then use positional $ to decrement it
       const updated = await Product.findOneAndUpdate(
         {
           _id: product._id,
-          'sizes.size': item.size,
-          'sizes.stock': { $gte: item.quantity },
           soldOut: false,
           isActive: true,
+          sizes: { $elemMatch: { size: item.size, stock: { $gte: item.quantity } } },
         },
         {
           $inc: { 'sizes.$.stock': -item.quantity },
@@ -107,6 +100,7 @@ exports.checkout = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
+    logger.info(`Order created: ${order[0]._id} by user ${req.user.id}, total: ${totalAmount}`);
     res.status(201).json({ success: true, data: order[0] });
   } catch (error) {
     await session.abortTransaction();
@@ -119,8 +113,8 @@ exports.checkout = async (req, res, next) => {
 // @route   GET /api/orders
 exports.getMyOrders = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     const [orders, total] = await Promise.all([
@@ -178,6 +172,7 @@ exports.updateOrderStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
+    logger.info(`Order ${order._id} status updated: order=${orderStatus}, payment=${paymentStatus}`);
     res.status(200).json({ success: true, data: order });
   } catch (error) {
     next(error);
@@ -188,8 +183,8 @@ exports.updateOrderStatus = async (req, res, next) => {
 // @route   GET /api/orders/admin/all
 exports.getAllOrders = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
     const filter = {};
