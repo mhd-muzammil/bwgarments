@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { HiChevronDown, HiChevronUp, HiLocationMarker, HiPhone, HiUser } from 'react-icons/hi';
+import { Link } from 'react-router-dom';
+import { HiChevronDown, HiChevronUp, HiLocationMarker, HiPhone, HiUser, HiExternalLink } from 'react-icons/hi';
 import API from '../../utils/api';
 import { formatPrice } from '../../utils/formatPrice';
 import toast from 'react-hot-toast';
@@ -100,7 +101,7 @@ const OrderManager = () => {
                         {isExpanded ? <HiChevronUp className="w-4 h-4 text-grey-600" /> : <HiChevronDown className="w-4 h-4 text-grey-600" />}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold">Order #{order._id.slice(-8).toUpperCase()}</p>
+                        <Link to={`/admin/orders/${order._id}`} onClick={(e) => e.stopPropagation()} className="text-xs font-semibold hover:text-blue-600 inline-flex items-center gap-1">Order #{order._id.slice(-8).toUpperCase()} <HiExternalLink className="w-3 h-3" /></Link>
                         <p className="text-xs text-grey-500">
                           {order.user?.name} ({order.user?.email}) — {new Date(order.createdAt).toLocaleDateString('en-IN')}
                         </p>

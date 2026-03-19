@@ -70,6 +70,20 @@ const orderSchema = new mongoose.Schema(
       enum: ['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'],
       default: 'processing',
     },
+    adminNotes: [
+      {
+        note: { type: String, required: true },
+        author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    statusHistory: [
+      {
+        status: String,
+        changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        changedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

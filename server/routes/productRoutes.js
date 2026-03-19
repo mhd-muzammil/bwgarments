@@ -8,6 +8,9 @@ const {
   deleteProduct,
   toggleSoldOut,
   getAdminProducts,
+  bulkUpdateStock,
+  exportInventory,
+  getInventory,
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
@@ -15,6 +18,9 @@ const { createProductRules, updateProductRules, mongoIdParam } = require('../mid
 
 // Admin routes — must be before /:id
 router.get('/admin/all', protect, authorize('admin'), getAdminProducts);
+router.get('/admin/inventory', protect, authorize('admin'), getInventory);
+router.get('/admin/export', protect, authorize('admin'), exportInventory);
+router.put('/admin/bulk-stock', protect, authorize('admin'), bulkUpdateStock);
 router.post('/', protect, authorize('admin'), createProductRules, createProduct);
 
 // Public

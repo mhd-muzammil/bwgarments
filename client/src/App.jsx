@@ -25,8 +25,12 @@ const OrderManager = lazy(() => import('./pages/admin/OrderManager'));
 const Analytics = lazy(() => import('./pages/admin/Analytics'));
 const CategoryManager = lazy(() => import('./pages/admin/CategoryManager'));
 const CustomerManager = lazy(() => import('./pages/admin/CustomerManager'));
+const Inventory = lazy(() => import('./pages/admin/Inventory'));
+const OrderDetail = lazy(() => import('./pages/admin/OrderDetail'));
+const ActivityLog = lazy(() => import('./pages/admin/ActivityLog'));
+const CouponManager = lazy(() => import('./pages/admin/CouponManager'));
 
-import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft, HiChartBar, HiTag, HiUsers } from 'react-icons/hi';
+import { HiViewGrid, HiCube, HiClipboardList, HiArrowLeft, HiChartBar, HiTag, HiUsers, HiArchive, HiTicket, HiClock } from 'react-icons/hi';
 import WhatsAppButton from './components/WhatsAppButton';
 
 // Admin Layout
@@ -37,8 +41,11 @@ const AdminLayout = () => {
     { to: '/admin/analytics', label: 'Analytics', icon: HiChartBar },
     { to: '/admin/products', label: 'Products', icon: HiCube },
     { to: '/admin/categories', label: 'Categories', icon: HiTag },
+    { to: '/admin/inventory', label: 'Inventory', icon: HiArchive },
     { to: '/admin/orders', label: 'Orders', icon: HiClipboardList },
     { to: '/admin/customers', label: 'Customers', icon: HiUsers },
+    { to: '/admin/coupons', label: 'Coupons', icon: HiTicket },
+    { to: '/admin/activity', label: 'Activity', icon: HiClock },
   ];
 
   return (
@@ -139,8 +146,12 @@ function App() {
                   <Route path="products/new" element={<ProductForm />} />
                   <Route path="products/:id/edit" element={<ProductForm />} />
                   <Route path="categories" element={<CategoryManager />} />
+                  <Route path="inventory" element={<Inventory />} />
                   <Route path="orders" element={<OrderManager />} />
+                  <Route path="orders/:id" element={<OrderDetail />} />
                   <Route path="customers" element={<CustomerManager />} />
+                  <Route path="coupons" element={<CouponManager />} />
+                  <Route path="activity" element={<ActivityLog />} />
                 </Route>
               </Routes>
             </main>

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const ActivityLog = require('../models/ActivityLog');
 
 // @desc    Get admin dashboard stats
 // @route   GET /api/admin/stats
@@ -255,6 +256,47 @@ exports.getAnalytics = async (req, res, next) => {
           joined: u.createdAt,
         })),
         dailyOrders: dailyOrders.map((d) => ({ date: d._id, orders: d.count })),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get activity log / audit trail
+// @route   GET /api/admin/activity
+exports.getActivityLog = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 30;
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (req.query.targetType) {
+      filter.targetType = req.query.targetType;
+    }
+    if (req.query.actor) {
+      filter.actor = req.query.actor;
+    }
+
+    const [data, total] = await Promise.all([
+      ActivityLog.find(filter)
+        .populate('actor', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      ActivityLog.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
       },
     });
   } catch (error) {

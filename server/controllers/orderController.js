@@ -153,27 +153,111 @@ exports.getOrder = async (req, res, next) => {
   }
 };
 
-// @desc    Update order status (Admin)
+// @desc    Update order status (Admin) with history tracking
 // @route   PUT /api/orders/:id/status
 exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { orderStatus, paymentStatus } = req.body;
 
-    const updateFields = {};
-    if (orderStatus) updateFields.orderStatus = orderStatus;
-    if (paymentStatus) updateFields.paymentStatus = paymentStatus;
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
 
-    const order = await Order.findByIdAndUpdate(req.params.id, updateFields, {
-      new: true,
-      runValidators: true,
+    if (orderStatus && orderStatus !== order.orderStatus) {
+      order.statusHistory.push({
+        status: `order: ${order.orderStatus} → ${orderStatus}`,
+        changedBy: req.user.id,
+        changedAt: new Date(),
+      });
+      order.orderStatus = orderStatus;
+    }
+
+    if (paymentStatus && paymentStatus !== order.paymentStatus) {
+      order.statusHistory.push({
+        status: `payment: ${order.paymentStatus} → ${paymentStatus}`,
+        changedBy: req.user.id,
+        changedAt: new Date(),
+      });
+      order.paymentStatus = paymentStatus;
+    }
+
+    await order.save();
+
+    logger.info(`Order ${order._id} status updated: order=${orderStatus}, payment=${paymentStatus}`);
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Add admin note to order
+// @route   POST /api/orders/:id/notes
+exports.addOrderNote = async (req, res, next) => {
+  try {
+    const { note } = req.body;
+    if (!note || !note.trim()) {
+      return res.status(400).json({ success: false, message: 'Note is required' });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    order.adminNotes.push({
+      note: note.trim(),
+      author: req.user.id,
+      createdAt: new Date(),
     });
+
+    await order.save();
+
+    // Populate author names for response
+    await order.populate('adminNotes.author', 'name');
+
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get order detail with full history (Admin)
+// @route   GET /api/orders/:id/detail
+exports.getOrderDetail = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name email createdAt')
+      .populate('adminNotes.author', 'name')
+      .populate('statusHistory.changedBy', 'name')
+      .lean();
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    logger.info(`Order ${order._id} status updated: order=${orderStatus}, payment=${paymentStatus}`);
-    res.status(200).json({ success: true, data: order });
+    // Build timeline
+    const timeline = [
+      { event: 'Order placed', date: order.createdAt, type: 'created' },
+    ];
+
+    if (order.statusHistory) {
+      for (const h of order.statusHistory) {
+        timeline.push({
+          event: h.status,
+          date: h.changedAt,
+          by: h.changedBy?.name || 'System',
+          type: 'status',
+        });
+      }
+    }
+
+    timeline.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    res.status(200).json({
+      success: true,
+      data: { ...order, timeline },
+    });
   } catch (error) {
     next(error);
   }
