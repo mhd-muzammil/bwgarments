@@ -7,6 +7,7 @@ import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import MobileBottomNav from './components/Layout/MobileBottomNav';
 import ProtectedRoute from './components/ProtectedRoute';
+import PageTransition from './components/PageTransition';
 
 // Pages (eager — customer-facing)
 import Home from './pages/Home';
@@ -121,6 +122,7 @@ function App() {
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1">
+              <PageTransition>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
@@ -158,6 +160,7 @@ function App() {
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </PageTransition>
             </main>
             <Footer />
             <MobileBottomNav />
