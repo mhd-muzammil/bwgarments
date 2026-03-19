@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import API from '../utils/api';
 import ProductCard from '../components/Product/ProductCard';
 import CategoryTabs from '../components/Home/CategoryTabs';
@@ -9,6 +9,22 @@ import { HiArrowRight, HiArrowNarrowRight } from 'react-icons/hi';
 const Home = () => {
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scrollY, setScrollY] = useState(0);
+  const heroRef = useRef(null);
+
+  // Parallax scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (heroRef.current) {
+        const rect = heroRef.current.getBoundingClientRect();
+        if (rect.bottom > 0) {
+          setScrollY(window.scrollY);
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetch = async () => {
@@ -23,12 +39,15 @@ const Home = () => {
 
   return (
     <div>
-      {/* ─── Hero Section ─── */}
-      <section className="relative bg-grey-100 overflow-hidden">
+      {/* ─── Hero Section with Parallax ─── */}
+      <section ref={heroRef} className="relative bg-grey-100 overflow-hidden">
         <div className="container-custom relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[75vh] items-center">
-            {/* Left: Text */}
-            <div className="py-16 lg:py-24 lg:pr-12 animate-fade-in">
+            {/* Left: Text — floats up slowly */}
+            <div
+              className="py-16 lg:py-24 lg:pr-12 animate-fade-in"
+              style={{ transform: `translateY(${scrollY * -0.08}px)` }}
+            >
               <p className="text-accent text-xs sm:text-sm font-semibold tracking-[0.3em] uppercase mb-4">
                 New Season Collection
               </p>
@@ -64,7 +83,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Right: Hero Image Grid */}
+            {/* Right: Hero Image Grid — each image at different parallax speed */}
             <div className="relative hidden lg:block h-full">
               <div className="absolute inset-0 grid grid-cols-2 gap-3 p-4">
                 <div className="flex flex-col gap-3">
@@ -72,14 +91,16 @@ const Home = () => {
                     <img
                       src="https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=600&q=80"
                       alt="Fashion"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                      className="w-full h-[110%] object-cover hover:scale-105 transition-transform duration-700"
+                      style={{ transform: `translateY(${scrollY * -0.15}px) scale(1.05)` }}
                     />
                   </div>
                   <div className="flex-[1] overflow-hidden">
                     <img
                       src="https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80"
                       alt="Fashion"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                      className="w-full h-[110%] object-cover hover:scale-105 transition-transform duration-700"
+                      style={{ transform: `translateY(${scrollY * -0.05}px) scale(1.05)` }}
                     />
                   </div>
                 </div>
@@ -88,26 +109,29 @@ const Home = () => {
                     <img
                       src="https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80"
                       alt="Fashion"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                      className="w-full h-[110%] object-cover hover:scale-105 transition-transform duration-700"
+                      style={{ transform: `translateY(${scrollY * -0.1}px) scale(1.05)` }}
                     />
                   </div>
                   <div className="flex-[2] overflow-hidden">
                     <img
                       src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80"
                       alt="Fashion"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                      className="w-full h-[110%] object-cover hover:scale-105 transition-transform duration-700"
+                      style={{ transform: `translateY(${scrollY * -0.2}px) scale(1.05)` }}
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Mobile hero image */}
-            <div className="lg:hidden -mx-4 sm:-mx-6">
+            {/* Mobile hero image — subtle parallax */}
+            <div className="lg:hidden -mx-4 sm:-mx-6 overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800&q=80"
                 alt="Fashion"
                 className="w-full h-64 sm:h-80 object-cover"
+                style={{ transform: `translateY(${scrollY * -0.1}px) scale(1.1)` }}
               />
             </div>
           </div>
